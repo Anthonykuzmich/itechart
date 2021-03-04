@@ -21,7 +21,6 @@ def movie_details(movie_id: str) -> str:
     }
     response = es.search(index='movies', body=query_body, size=total_docs)
     elastic_docs = response["hits"]["hits"]
-    print(len(elastic_docs))
     return jsonify(elastic_docs)
 
 
