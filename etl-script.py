@@ -7,6 +7,8 @@ es = Elasticsearch()
 
 # creation writer table in ES
 cur.execute("DELETE FROM actors WHERE name='N/A'")
+cur.execute("DELETE FROM writers WHERE name='N/A'")
+cur.execute("UPDATE movies SET director = 'None' WHERE director = 'N/A'")
 data = cur.execute('''
 SELECT m.id, group_concat(a.name) actors_name, m.title, m.genre, m.director, w.name writer_name from actors a
 INNER JOIN movie_actors ma on a.id = ma.actor_id
