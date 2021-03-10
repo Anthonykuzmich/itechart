@@ -19,6 +19,14 @@ services:
       interval: "1s"
       timeout: "3s"
       retries: 60
+
+  script:
+    build: ./etl
+    restart: always
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
   web:
     build: ./web
     restart: always

@@ -4,5 +4,4 @@ COPY . /app
 WORKDIR /app
 RUN pip install -r requirements.txt
 ENTRYPOINT ["python"]
-CMD ["app/etl_script.py"]
 CMD ["app/app.py"]
