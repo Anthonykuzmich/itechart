@@ -43,6 +43,11 @@ def migrating_to_es():
     names_of_colums = list(map(lambda x: x[0], cur.description))
     for row in data_to_es():
         names_with_values = dict(zip(names_of_colums, row))
+        writers = json.loads(names_with_values['writers'])
+        writer_list = []
+        for writer_row in writers:
+            writer_list.append(writer_row['id'])
+        writers_pretty = ', '.join(writer_list)
 
         doc = {
             names_of_colums[0]: names_with_values['id'],
@@ -53,11 +58,8 @@ def migrating_to_es():
             names_of_colums[5]: names_with_values['imdb_rating'],
             names_of_colums[6]: names_with_values['actors_ids'],
             names_of_colums[7]: names_with_values['actors_names'],
-            names_of_colums[8]: names_with_values['writers']
+            names_of_colums[8]: writers_pretty
         }
-        writers = json.loads(names_with_values['writers'])
-        for writer in writers:
-            print(writer['id'])
         res = es.index(index='movies', id=names_with_values['id'], body=doc)
 
 
