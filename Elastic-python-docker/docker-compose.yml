@@ -7,7 +7,6 @@ services:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
     ports:
       - "9200:9200"
-      - "9300:9300"
     environment:
       - "cluster.name=elasticsearch"
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
@@ -22,6 +21,8 @@ services:
 
   script:
     build: ./etl
+    volumes:
+      - ./etl:/app
     restart: always
     networks:
       - elk
@@ -29,6 +30,8 @@ services:
       - elasticsearch
   web:
     build: ./web
+    volumes:
+      - ./web:/app
     restart: always
     ports:
       - "5000:5000"
