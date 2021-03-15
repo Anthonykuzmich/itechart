@@ -6,9 +6,8 @@ import json
 
 host = [{"host": 'elasticsearch'}]
 
-conn = sqlite3.connect('db.sqlite')
+conn = sqlite3.connect('script/db.sqlite')
 cur = conn.cursor()
-
 
 
 def clear_data_table():
@@ -100,7 +99,7 @@ group by m.id''')
 
 
 if __name__ == "__main__":
-    es = Elasticsearch()
+    es = Elasticsearch(hosts=[{"host": "elasticsearch"}], retry_on_timeout=True)
     for _ in range(100):
         try:
             es.cluster.health(wait_for_status='yellow')
