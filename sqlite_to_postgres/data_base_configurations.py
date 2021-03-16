@@ -1,31 +1,25 @@
-CREATE SCHEMA IF NOT EXISTS content;
-
-
+db_configurations = ('''
 create table movies
 (
     id uuid primary key,
     title       VARCHAR(100) NOT NULL,
     description text not null ,
-    creation_date DATE,
-    certificate TEXT not null ,
-    file_path TEXT not null ,
-    rating NUMERIC(3,1),
     genre       VARCHAR(100) NOT NULL,
     director    VARCHAR(100) NOT NULL,
-    imdb_rating NUMERIC(3,1) NULL,
+    imdb_rating NUMERIC(3,1) NULL
 );
 
 
 create table actors
 (
-    id primary key,
+    id  uuid PRIMARY KEY,
     name VARCHAR(100) NOT NULL
 );
 
 -- auto-generated definition
 create table movie_actors
 (
-    id PRIMARY KEY,
+    id uuid PRIMARY KEY,
     movie_id uuid NOT NULL ,
     actor_id uuid NOT NULL
 );
@@ -37,7 +31,7 @@ create table writers
 );
 
 create table movie_writers
-(   id primary key,
+(   id uuid primary key,
     movie_id  uuid not null,
     writer_id uuid not null
 );
@@ -48,10 +42,4 @@ movie_actors (movie_id, actor_id);
 
 CREATE UNIQUE INDEX film_work_writer ON
 movie_writers (movie_id, writer_id);
-
-
-
-
-
-
-
+''')
