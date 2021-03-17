@@ -4,11 +4,22 @@ create table IF NOT EXISTS movies
     id char(10) primary key,
     title       text,
     description text,
-    genre       text,
     director    text,
     imdb_rating NUMERIC(3,1) NULL
 );
 
+CREATE TABLE IF NOT EXISTS genre 
+(
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(40) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS genre_movies
+(
+    id SERIAL PRIMARY KEY,
+    movie_id char(10) NOT NULL,
+    genre_id int NOT NULL
+);
 
 create table IF NOT EXISTS actors
 (
@@ -38,8 +49,13 @@ create table IF NOT EXISTS movie_writers
 
 
 CREATE UNIQUE INDEX IF NOT EXISTS film_work_actor ON
-movie_actors (movie_id, id, actor_id);
+movie_actors (movie_id, actor_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS film_work_writer ON
-movie_writers (movie_id, id, writer_id);
+movie_writers (movie_id, writer_id);
+
+CREATE UNIQUE INDEX film_work_genre ON genre_movies
+(movie_id, genre_id);
 ''')
+
+

@@ -6,14 +6,13 @@ from data_base_configurations import db_configurations
 dsn = {
     "dbname": "movies_db",
     "user": "postgres",
-    "password": "postgres",
+    "password": "123qwe",
     "host": "127.0.0.1",
     "port": 5432,
 }
 
 
 class sqlite_open(object):
-
 
     def __init__(self, path):
         self.path = path
@@ -86,14 +85,13 @@ def migrate_movies():
             names_with_values["title"],
             names_with_values["description"],
             float(names_with_values["imdb_rating"]),
-            names_with_values["genre"],
             names_with_values["director"],
         )
 
         with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
             cursor.execute(
-                """INSERT INTO movies (id, title, description, imdb_rating, genre, director ) 
-            VALUES (%s, %s, %s, %s, %s, %s)""",
+                """INSERT INTO movies (id, title, description, imdb_rating, director ) 
+            VALUES (%s, %s, %s, %s, %s)""",
                 data,
             )
 
@@ -116,14 +114,16 @@ def migrate_movie_writers():
         for row in data:
             names_with_values = dict(zip(names_of_colums, row))
             writers = json.loads(names_with_values["writers"])
-
+            writers_movies = []
             for writer in writers:
                 with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
                     data = (names_with_values["id"], writer["id"])
-                    cursor.execute(
-                        """INSERT INTO movie_writers (movie_id, writer_id) VALUES (%s, %s)""",
-                        data,
-                    )
+                    if data not in writers_movies:
+                        cursor.execute(
+                            """INSERT INTO movie_writers (movie_id, writer_id) VALUES (%s, %s)""",
+                            data,
+                        )
+                        writers_movies.append(data)
 
 
 def migrate_actors():
@@ -139,12 +139,50 @@ def migrate_actors():
 def migrate_movie_actors():
     with sqlite_open("db.sqlite") as cur:
         movie_actors = cur.execute("select * from movie_actors").fetchall()
+        movie_actor_list = []
         for movie_actor in movie_actors:
             with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
-                cursor.execute(
-                    """INSERT INTO movie_actors (movie_id, actor_id) VALUES (%s, %s)""",
-                    movie_actor,
-                )
+                if movie_actor not in movie_actor_list:
+                    cursor.execute(
+                        """INSERT INTO movie_actors (movie_id, actor_id) VALUES (%s, %s)""",
+                        movie_actor,
+                    )
+                    movie_actor_list.append(movie_actor)
+
+
+def migrate_genre():
+    with sqlite_open('db.sqlite') as cur:
+        genres = cur.execute('SELECT distinct genre from movies').fetchall()
+        genre_list = []
+        for genre in genres:
+            for g in genre:
+                g = g.split(',')
+                for i in g:
+                    genre_list.append(i)
+        genres = set(genre_list)
+        genre = tuple(genres)
+        list_genres = []
+        for g in genre:
+            g = g.strip()
+            list_genres.append(g)
+        list_genres = set(list_genres)
+        list_genres = tuple(list_genres)
+        for genre in list_genres:
+            with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
+                cursor.execute('INSERT INTO genre (name) VALUES (%s)', (genre,))
+        return genres
+
+
+def migrate_movie_genre():
+    with sqlite_open('db.sqlite') as cur:
+        genre = cur.execute("select id, name from genre").fetchall()
+        for gen in genre:
+            with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
+                test = cur.execute("select id, genre from movies where genre like (?)", ['%' + gen[1] + '%']).fetchall()
+                for t in test:
+                    movie_genre = (t[0], gen[0])
+                    cursor.execute('''INSERT INTO genre_movies (movie_id, genre_id) VALUES (%s, %s)''',
+                                       movie_genre)
 
 
 if __name__ == "__main__":
@@ -163,3 +201,5 @@ if __name__ == "__main__":
             migrate_movie_writers()
             migrate_actors()
             migrate_movie_actors()
+            migrate_genre()
+            migrate_movie_genre()
