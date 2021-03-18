@@ -1,43 +1,81 @@
-from django.core.validators import MinValueValidator
 from django.db import models
-from django.utils.translation import gettext_lazy as _
-from model_utils.models import TimeStampedModel
 
 
-class Genre(TimeStampedModel):
-    name = models.CharField(_('название'), max_length=255)
-    description = models.TextField(_('описание'), blank=True)
+class Actors(models.Model):
+    name = models.CharField(max_length=100)
 
     class Meta:
-        verbose_name = _('жанр')
-        verbose_name_plural = _('жанры')
+        managed = False
+        db_table = 'actors'
 
-        def __str__(self):
-            return self.name
-
-
-class FilmworkType(models.TextChoices):
-    MOVIE = 'movie', _('фильм')
-    TV_SHOW = 'tv_show', _('шоу')
+    def __str__(self):
+        return self.name
 
 
-class Filmwork(TimeStampedModel):
-    title = models.CharField(_('название'), max_length=255)
-    description = models.TextField(_('описание'), blank=True)
-    creation_date = models.DateField(_('дата создания фильма'),
-                                     blank=True)
-    certificate = models.TextField(_('сертификат'), blank=True)
-    file_path = models.FileField(_('файл'),
-                                 upload_to='film_works/', blank=True)
-    rating = models.FloatField(_('рейтинг'),
-                               validators=[MinValueValidator(0)], blank=True)
-    type = models.CharField(_('тип'), max_length=20,
-                            choices=FilmworkType.choices)
-    genres = models.ManyToManyField(Genre)
+class Genre(models.Model):
+    name = models.CharField(max_length=40)
 
     class Meta:
-        verbose_name = _('кинопроизведение')
-        verbose_name_plural = _('кинопроизведения')
+        managed = False
+        db_table = 'genre'
 
-        def __str__(self):
-            return self.title
+    def __str__(self):
+        return self.name
+
+
+class Writers(models.Model):
+    id = models.CharField(primary_key=True, max_length=40)
+    name = models.CharField(max_length=40)
+
+    class Meta:
+        managed = False
+        db_table = 'writers'
+
+    def __str__(self):
+        return self.name
+
+
+class Movie(models.Model):
+    id = models.CharField(primary_key=True, max_length=10)
+    title = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    director = models.TextField(blank=True, null=True)
+    imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'movies'
+
+    def __str__(self):
+        return self.title
+
+
+class GenreMovies(models.Model):
+    id = models.IntegerField(primary_key=True, editable=False)
+    genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
+
+    class Meta:
+        managed = False
+        db_table = 'genre_movies'
+        unique_together = (('movie', 'genre'),)
+
+
+class MovieActors(models.Model):
+    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
+    actor = models.ForeignKey(Actors, on_delete=models.CASCADE)
+
+    class Meta:
+        managed = False
+        db_table = 'movie_actors'
+        unique_together = (('movie', 'actor'),)
+
+
+class MovieWriters(models.Model):
+    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
+    writer = models.ForeignKey(Writers, max_length=40, on_delete=models.CASCADE)
+
+    class Meta:
+        managed = False
+        db_table = 'movie_writers'
+        unique_together = (('movie', 'writer'),)
