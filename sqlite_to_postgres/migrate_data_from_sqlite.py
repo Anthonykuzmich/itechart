@@ -4,7 +4,7 @@ import psycopg2
 from data_base_configurations import db_configurations
 
 dsn = {
-    "dbname": "movies_db",
+    "dbname": "movies",
     "user": "postgres",
     "password": "123qwe",
     "host": "127.0.0.1",

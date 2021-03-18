@@ -1,7 +1,12 @@
+import string
+import random
+
 from django.db import models
+from django.urls import reverse
 
 
 class Actors(models.Model):
+    id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=100)
 
     class Meta:
@@ -24,7 +29,8 @@ class Genre(models.Model):
 
 
 class Writers(models.Model):
-    id = models.CharField(primary_key=True, max_length=40)
+    id = models.CharField(primary_key=True, max_length=40, editable=False, default=''.join(random.choices(string.ascii_uppercase
+                                                                                          + string.digits, k=40)))
     name = models.CharField(max_length=40)
 
     class Meta:
@@ -35,8 +41,13 @@ class Writers(models.Model):
         return self.name
 
 
+def get_absolute_url():
+    return reverse('')
+
+
 class Movie(models.Model):
-    id = models.CharField(primary_key=True, max_length=10)
+    id = models.CharField(primary_key=True, max_length=10, default=''.join(random.choices(string.ascii_uppercase
+                                                                                          + string.digits, k=9)))
     title = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     director = models.TextField(blank=True, null=True)
@@ -53,7 +64,7 @@ class Movie(models.Model):
 class GenreMovies(models.Model):
     id = models.IntegerField(primary_key=True, editable=False)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
-    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
 
     class Meta:
         managed = False
@@ -62,7 +73,8 @@ class GenreMovies(models.Model):
 
 
 class MovieActors(models.Model):
-    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
+    id = models.IntegerField(primary_key=True, editable=False)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     actor = models.ForeignKey(Actors, on_delete=models.CASCADE)
 
     class Meta:
@@ -72,6 +84,7 @@ class MovieActors(models.Model):
 
 
 class MovieWriters(models.Model):
+    id = models.IntegerField(primary_key=True, editable=False)
     movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
     writer = models.ForeignKey(Writers, max_length=40, on_delete=models.CASCADE)
 
