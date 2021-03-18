@@ -29,8 +29,9 @@ class Genre(models.Model):
 
 
 class Writers(models.Model):
-    id = models.CharField(primary_key=True, max_length=40, editable=False, default=''.join(random.choices(string.ascii_uppercase
-                                                                                          + string.digits, k=40)))
+    id = models.CharField(primary_key=True, max_length=40, editable=False,
+                          default=''.join(random.choices(string.ascii_uppercase
+                                                         + string.digits, k=40)))
     name = models.CharField(max_length=40)
 
     class Meta:
@@ -39,10 +40,6 @@ class Writers(models.Model):
 
     def __str__(self):
         return self.name
-
-
-def get_absolute_url():
-    return reverse('')
 
 
 class Movie(models.Model):
