@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import Movie, Actors, Genre, Writers, MovieActors, GenreMovies, MovieWriters
+from .models import Movie, Actor, Genre, Writer, MovieActor, MovieGenre, MovieWriter
 
 
 class ActorInline(admin.TabularInline):
-    model = MovieActors
+    model = MovieActor
     extra = 0
 
     def get_queryset(self, request):
@@ -11,7 +11,7 @@ class ActorInline(admin.TabularInline):
 
 
 class WriterInline(admin.TabularInline):
-    model = MovieWriters
+    model = MovieWriter
     extra = 0
 
     def get_queryset(self, request):
@@ -19,7 +19,7 @@ class WriterInline(admin.TabularInline):
 
 
 class GenreInline(admin.TabularInline):
-    model = GenreMovies
+    model = MovieGenre
     extra = 0
 
     def get_queryset(self, request):
@@ -40,6 +40,6 @@ class MovieAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'id')
 
 
-admin.site.register(Actors)
+admin.site.register(Actor)
 admin.site.register(Genre)
-admin.site.register(Writers)
+admin.site.register(Writer)

@@ -4,7 +4,7 @@ import psycopg2
 from data_base_configurations import db_configurations
 
 dsn = {
-    "dbname": "movies",
+    "dbname": "movies_database",
     "user": "postgres",
     "password": "123qwe",
     "host": "127.0.0.1",
@@ -90,7 +90,7 @@ def migrate_movies():
 
         with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
             cursor.execute(
-                """INSERT INTO movies (id, title, description, imdb_rating, director ) 
+                """INSERT INTO movie (id, title, description, imdb_rating, director ) 
             VALUES (%s, %s, %s, %s, %s)""",
                 data,
             )
@@ -102,7 +102,7 @@ def migrate_writers():
         for writer in writers:
             with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
                 cursor.execute(
-                    """INSERT INTO writers (id, name) VALUES (%s, %s)""", writer
+                    """INSERT INTO writer (id, name) VALUES (%s, %s)""", writer
                 )
 
 
@@ -120,7 +120,7 @@ def migrate_movie_writers():
                     data = (names_with_values["id"], writer["id"])
                     if data not in writers_movies:
                         cursor.execute(
-                            """INSERT INTO movie_writers (movie_id, writer_id) VALUES (%s, %s)""",
+                            """INSERT INTO movie_writer (movie_id, writer_id) VALUES (%s, %s)""",
                             data,
                         )
                         writers_movies.append(data)
@@ -128,11 +128,11 @@ def migrate_movie_writers():
 
 def migrate_actors():
     with sqlite_open("db.sqlite") as cur:
-        actors = cur.execute("select * from actors").fetchall()
+        actors = cur.execute("select name from actors").fetchall()
         for actor in actors:
             with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
                 cursor.execute(
-                    """INSERT INTO actors (id, name) VALUES (%s, %s)""", actor
+                    """INSERT INTO actor (name) VALUES  (%s)""", actor
                 )
 
 
@@ -144,7 +144,7 @@ def migrate_movie_actors():
             with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
                 if movie_actor not in movie_actor_list:
                     cursor.execute(
-                        """INSERT INTO movie_actors (movie_id, actor_id) VALUES (%s, %s)""",
+                        """INSERT INTO movie_actor (movie_id, actor_id) VALUES (%s, %s)""",
                         movie_actor,
                     )
                     movie_actor_list.append(movie_actor)
@@ -181,8 +181,8 @@ def migrate_movie_genre():
                 test = cur.execute("select id, genre from movies where genre like (?)", ['%' + gen[1] + '%']).fetchall()
                 for t in test:
                     movie_genre = (t[0], gen[0])
-                    cursor.execute('''INSERT INTO genre_movies (movie_id, genre_id) VALUES (%s, %s)''',
-                                       movie_genre)
+                    cursor.execute('''INSERT INTO movie_genre (movie_id, genre_id) VALUES (%s, %s)''',
+                                   movie_genre)
 
 
 if __name__ == "__main__":
