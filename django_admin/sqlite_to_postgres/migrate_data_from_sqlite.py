@@ -6,7 +6,7 @@ from data_base_configurations import db_configurations
 dsn = {
     "dbname": "movies_database",
     "user": "postgres",
-    "password": "123qwe",
+    "password": "postgres",
     "host": "127.0.0.1",
     "port": 5432,
 }

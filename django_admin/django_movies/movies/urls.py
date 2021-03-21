@@ -16,9 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from . import views
+from .views import MovieListApi, MovieDetailApi
 
 urlpatterns = [
-    path('movies/', views.MovieListApi.as_view()),
-    path('movies/<str:pk>', views.MoviesDetailApi.as_view()),
+    path('movies/', MovieListApi.as_view()),
+    path('movies/<str:pk>', MovieDetailApi.as_view()),
 ]

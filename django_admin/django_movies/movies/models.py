@@ -1,9 +1,6 @@
-import string
-import random
 import uuid
 
 from django.db import models
-from django.urls import reverse
 
 
 class Actor(models.Model):
@@ -12,6 +9,7 @@ class Actor(models.Model):
     class Meta:
         managed = False
         db_table = 'actor'
+        indexes = [models.Index(fields=['name'])]
 
     def __str__(self):
         return self.name
@@ -23,6 +21,7 @@ class Genre(models.Model):
     class Meta:
         managed = False
         db_table = 'genre'
+        indexes = [models.Index(fields=['name'])]
 
     def __str__(self):
         return self.name
@@ -36,6 +35,7 @@ class Writer(models.Model):
     class Meta:
         managed = False
         db_table = 'writer'
+        indexes = [models.Index(fields=['name'])]
 
     def __str__(self):
         return self.name
@@ -47,10 +47,14 @@ class Movie(models.Model):
     description = models.TextField(blank=True, null=True)
     director = models.TextField(blank=True, null=True)
     imdb_rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    genres = models.ManyToManyField(Genre, through='MovieGenre')
+    actors = models.ManyToManyField(Actor, through='MovieActor')
+    writers = models.ManyToManyField(Writer, through='MovieWriter')
 
     class Meta:
         managed = False
         db_table = 'movie'
+        indexes = [models.Index(fields=['title'])]
 
     def __str__(self):
         return self.title
@@ -65,6 +69,7 @@ class MovieGenre(models.Model):
         managed = False
         db_table = 'movie_genre'
         unique_together = (('movie', 'genre'),)
+        indexes = [models.Index(fields=['genre', 'movie'])]
 
 
 class MovieActor(models.Model):
@@ -76,6 +81,7 @@ class MovieActor(models.Model):
         managed = False
         db_table = 'movie_actor'
         unique_together = (('movie', 'actor'),)
+        indexes = [models.Index(fields=['actor', 'movie'])]
 
 
 class MovieWriter(models.Model):
@@ -87,3 +93,4 @@ class MovieWriter(models.Model):
         managed = False
         db_table = 'movie_writer'
         unique_together = (('movie', 'writer'),)
+        indexes = [models.Index(fields=['writer', 'movie'])]
