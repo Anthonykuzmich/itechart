@@ -40,6 +40,17 @@ class MovieAdmin(admin.ModelAdmin):
     search_fields = ('title', 'description', 'id')
 
 
-admin.site.register(Actor)
-admin.site.register(Genre)
-admin.site.register(Writer)
+@admin.register(Writer)
+class WriterAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+    fields = ('name',)
+
+
+@admin.register(Actor)
+class ActorAdmin(admin.ModelAdmin):
+    list_display = ('name',)
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    list_display = ('name',)

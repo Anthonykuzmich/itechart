@@ -1,7 +1,7 @@
 db_configurations = ('''
 create table IF NOT EXISTS movie
 (
-    id char(10) primary key,
+    id char(36) primary key,
     title       text,
     description text,
     director    text,
