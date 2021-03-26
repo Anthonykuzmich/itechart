@@ -22,7 +22,7 @@ services:
     environment:
     - POSTGRES_PASSWORD=123qwe
     - POSTGRES_USER=postgres
-    - POSTGRES_DB=movies_db
+    - POSTGRES_DB=movies
     ports:
     - 5432:5432
 

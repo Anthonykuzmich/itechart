@@ -1,9 +1,9 @@
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.generic.detail import BaseDetailView
 from django.views.generic.list import BaseListView
-from movies.models import Movie, MovieGenre, MovieActor, MovieWriter
+from movies.models import Movie
 
 
 class MovieListApi(BaseListView):
@@ -24,24 +24,27 @@ class MovieListApi(BaseListView):
         page = self.request.GET.get("page")
         paginator = Paginator(data, self.paginate_by)
         try:
-            if page == 'last':
-                page_obj = paginator.page(20)
-                prev_page = 19
-                next_page = 1
-            else:
-                page_obj = paginator.page(page)
-                prev_page = paginator.page(page).previous_page_number()
-                next_page = paginator.page(page).next_page_number()
-        except (PageNotAnInteger, EmptyPage):
+            page_obj = paginator.page(page)
+        except (EmptyPage, PageNotAnInteger):
             page_obj = paginator.page(1)
-            prev_page = 1
-            next_page = 3
 
-        context = {"count": paginator.count,
-                   "total_pages": paginator.num_pages,
-                   "prev": prev_page,
-                   "next": next_page,
-                   "results": list(page_obj)}
+        prev_page = (
+            page_obj.previous_page_number()
+            if page_obj.has_previous()
+            else None
+        )
+        next_page = (
+            page_obj.next_page_number()
+            if page_obj.has_next()
+            else None
+        )
+        context = {
+            "count": paginator.count,
+            "total_pages": paginator.num_pages,
+            "prev": prev_page,
+            "next": next_page,
+            "results": list(page_obj),
+        }
         return context
 
     def render_to_response(self, context):

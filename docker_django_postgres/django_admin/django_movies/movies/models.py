@@ -28,7 +28,7 @@ class Genre(models.Model):
 
 
 class Writer(models.Model):
-    id = models.CharField(primary_key=True, max_length=40, editable=False,
+    id = models.CharField(primary_key=True, max_length=36,
                           default=uuid.uuid4())
     name = models.CharField(max_length=40)
 
@@ -42,7 +42,7 @@ class Writer(models.Model):
 
 
 class Movie(models.Model):
-    id = models.CharField(primary_key=True, max_length=10, default=uuid.uuid4())
+    id = models.CharField(primary_key=True, max_length=36, default=uuid.uuid4())
     title = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     director = models.TextField(blank=True, null=True)
@@ -61,7 +61,7 @@ class Movie(models.Model):
 
 
 class MovieGenre(models.Model):
-    id = models.IntegerField(primary_key=True, editable=False)
+    id = models.AutoField(primary_key=True, editable=False)
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
 
@@ -73,7 +73,7 @@ class MovieGenre(models.Model):
 
 
 class MovieActor(models.Model):
-    id = models.IntegerField(primary_key=True, editable=False)
+    id = models.AutoField(primary_key=True, editable=False)
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     actor = models.ForeignKey(Actor, on_delete=models.CASCADE)
 
@@ -85,7 +85,7 @@ class MovieActor(models.Model):
 
 
 class MovieWriter(models.Model):
-    id = models.IntegerField(primary_key=True, editable=False)
+    id = models.AutoField(primary_key=True, editable=False)
     movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
     writer = models.ForeignKey(Writer, max_length=40, on_delete=models.CASCADE)
 
