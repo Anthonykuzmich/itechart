@@ -5,13 +5,12 @@ import psycopg2
 from configs.backoff_decorator import backoff
 
 dsn = {
-    "dbname": "movies",
+    "dbname": "movies_db",
     "user": "postgres",
     "password": "123qwe",
-    "host": "0.0.0.0",
+    "host": "localhost",
     "port": 5432,
 }
-
 
 
 @backoff()
@@ -27,54 +26,67 @@ def create_index(es_object, index_name='movies'):
     # index settings
     settings = {
         "settings": {
-            "number_of_shards": 1,
-            "number_of_replicas": 0
+            "refresh_interval": "1s",
+            "analysis": {
+                "filter": {
+                    "english_stop": {"type": "stop", "stopwords": "_english_"},
+                    "english_stemmer": {"type": "stemmer", "language": "english"},
+                    "english_possessive_stemmer": {
+                        "type": "stemmer",
+                        "language": "possessive_english",
+                    },
+                    "russian_stop": {"type": "stop", "stopwords": "_russian_"},
+                    "russian_stemmer": {"type": "stemmer", "language": "russian"},
+                },
+                "analyzer": {
+                    "ru_en": {
+                        "tokenizer": "standard",
+                        "filter": [
+                            "lowercase",
+                            "english_stop",
+                            "english_stemmer",
+                            "english_possessive_stemmer",
+                            "russian_stop",
+                            "russian_stemmer",
+                        ],
+                    }
+                },
+            },
         },
         "mappings": {
-            "members": {
-                "dynamic": "strict",
-                "properties": {
-                    "id": {
-                        "type": "text"
+            "dynamic": "strict",
+            "properties": {
+                "id": {"type": "keyword"},
+                "imdb_rating": {"type": "float"},
+                "genre": {"type": "keyword"},
+                "title": {
+                    "type": "text",
+                    "analyzer": "ru_en",
+                    "fields": {"raw": {"type": "keyword"}},
+                },
+                "description": {"type": "text", "analyzer": "ru_en"},
+                "director": {"type": "text", "analyzer": "ru_en"},
+                "actors": {
+                    "type": "nested",
+                    "dynamic": "strict",
+                    "properties": {
+                        "name": {"type": "text", "analyzer": "ru_en"},
                     },
-                    "title": {
-                        "type": "text"
+                },
+                "writers": {
+                    "type": "nested",
+                    "dynamic": "strict",
+                    "properties": {
+                        "name": {"type": "text", "analyzer": "ru_en"},
                     },
-                    "genre": {
-                        "type": "nested",
-                        "properties": {
-                            "name": {"type": "text"}
-                        },
-                    },
-                    "description": {
-                        "type": "text"
-                    },
-                    "director": {
-                        "type": "text"
-                    },
-                    "imdb_rating": {
-                        "type": "float"
-                    },
-                    "writers": {
-                        "type": "nested",
-                        "properties": {
-                            "name": {"type": "text"}
-                        },
-                    },
-                    "actors": {
-                        "type": "nested",
-                        "properties": {
-                            "name": {"type": "text"}
-                        },
-                    },
-                }
-            }
+                },
+            },
         }
     }
     try:
         if not es_object.indices.exists(index_name):
             # Ignore 400 means to ignore "Index Already Exist" error.
-            es_object.indices.create(index=index_name, ignore=400, body=settings)
+            es_object.indices.create(index=index_name, ignore=404, body=settings)
             print('Created Index')
         created = True
     except Exception as ex:
@@ -90,8 +102,8 @@ class Movie(BaseModel):
     description: str = None
     director: str = None
     imdb_rating: float
-    writers: list
-    actors: list
+    writers: dict or list
+    actors: dict or list
 
 
 @backoff()
@@ -119,13 +131,16 @@ def transform_data():
         names_with_values = dict(zip(names_of_colums, row))
         doc = {
             names_of_colums[0]: names_with_values["id"],
-            names_of_colums[1]: names_with_values["title"],
+            names_of_colums[5]: float(names_with_values["imdb_rating"]),
             names_of_colums[2]: names_with_values["genre"],
+            names_of_colums[1]: names_with_values["title"],
             names_of_colums[3]: names_with_values["description"],
             names_of_colums[4]: names_with_values["director"],
-            names_of_colums[5]: float(names_with_values["imdb_rating"]),
-            names_of_colums[6]: list(names_with_values["writers"]),
-            names_of_colums[7]: list(names_with_values["actors"])
+            'actors':
+                {"name": list(names_with_values["actors"])},
+            'writers':
+                {"name": list(names_with_values["writers"])},
+
         }
         doc = json.dumps(doc)
         try:
