@@ -3,6 +3,8 @@ from elasticsearch import Elasticsearch, helpers
 from pydantic import BaseModel, ValidationError
 import psycopg2
 from configs.backoff_decorator import backoff
+from configs.jsonfilestorage import JsonFileStorage, State, LocalStorage
+import typing
 
 dsn = {
     "dbname": "movies_db",
@@ -86,7 +88,7 @@ def create_index(es_object, index_name='movies'):
     try:
         if not es_object.indices.exists(index_name):
             # Ignore 400 means to ignore "Index Already Exist" error.
-            es_object.indices.create(index=index_name, ignore=404, body=settings)
+            es_object.indices.create(index=index_name, body=settings)
             print('Created Index')
         created = True
     except Exception as ex:
@@ -98,12 +100,12 @@ def create_index(es_object, index_name='movies'):
 class Movie(BaseModel):
     id: str
     title: str
-    genre: list
+    genre: str
     description: str = None
     director: str = None
     imdb_rating: float
-    writers: dict or list
-    actors: dict or list
+    writers: str
+    actors: str
 
 
 @backoff()
@@ -136,12 +138,13 @@ def transform_data():
             names_of_colums[1]: names_with_values["title"],
             names_of_colums[3]: names_with_values["description"],
             names_of_colums[4]: names_with_values["director"],
-            'actors':
-                {"name": list(names_with_values["actors"])},
-            'writers':
-                {"name": list(names_with_values["writers"])},
-
+            'actors': {'name': list(names_with_values["actors"])},
+            'writers': {'name': list(names_with_values["writers"])}
         }
+
+        state = State(names_with_values['id'], doc)
+        state.set_state()
+        JsonFileStorage('state.json').load_json_state()
         doc = json.dumps(doc)
         try:
             movie = Movie.parse_raw(doc)
@@ -154,6 +157,7 @@ def transform_data():
 
 def load_data(elastic_object, data, index_name):
     try:
+
         helpers.bulk(client=elastic_object, actions=data, index=index_name)
         print('Data was successfully inserted!!!')
     except Exception as ex:
@@ -163,7 +167,8 @@ def load_data(elastic_object, data, index_name):
 
 if __name__ == '__main__':
     es = connect_elasticsearch()
-    create_index(es)
+    create_index(es, index_name='movie')
     extract_data()
-    transform_data()
-    load_data(elastic_object=es, data=transform_data(), index_name='movies')
+    data = transform_data()
+
+    load_data(elastic_object=es, data=data, index_name='movie')
