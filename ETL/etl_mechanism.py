@@ -15,7 +15,7 @@ dsn = {
     "port": 5432,
 }
 
-
+@backoff()
 def connect_elasticsearch():
     es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
     if not es.ping():
@@ -108,18 +108,18 @@ class Movie(BaseModel):
     actors: str
 
 
-@backoff()
+# @backoff()
 def extract_data():
     with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
         cursor.execute('''select m.id, m.title, array_agg(DISTINCT g.name) as genre,m.description, m.director, m.imdb_rating,
-        array_agg(DISTINCT w.name) as writers, array_agg(DISTINCT a.name) as actors from movie m
+        array_agg(DISTINCT w.name) as writers, array_agg(DISTINCT a.name) as actors, m.updated_at from movie m
         LEFT JOIN movie_actor ma on m.id = ma.movie_id
         LEFT JOIN actor a on ma.actor_id = a.id
         LEFT JOIN movie_writer mw on m.id = mw.movie_id
         LEFT JOIN writer w on mw.writer_id = w.id
         LEFT JOIN movie_genre mg on m.id = mg.movie_id
         LEFT JOIN genre g on mg.genre_id = g.id
-        group by m.id;''')
+        group by m.id ORDER BY m.updated_at DESC''')
         data = cursor.fetchall()
         description = cursor.description
         return {'data': data, 'description': description}
@@ -170,9 +170,9 @@ def get_last_state():
 
 if __name__ == '__main__':
     es = connect_elasticsearch()
-    create_index(es, index_name='movies')
+    create_index(es, index_name='movies_db')
     extract_data()
     data = transform_data()
 
-    load_data(elastic_object=es, data=data, index_name='movies')
+    load_data(elastic_object=es, data=data, index_name='movies_db')
     print(get_last_state())
