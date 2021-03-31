@@ -1,6 +1,12 @@
-from redis import Redis
+from elasticsearch import Elasticsearch
+from backoff_decorator import backoff
 
-r = Redis()
 
-r.mset({"Croatia": "Zagreb", "Bahamas": "Nassau"})
-print(r.get("Bahamas"))
+
+def connect_elasticsearch():
+    es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+    if not es.ping():
+        raise ValueError("Connection failed")
+    return es
+
+connect_elasticsearch()

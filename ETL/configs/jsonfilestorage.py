@@ -10,7 +10,7 @@ class LocalStorage:
 
 class RedisStorage(LocalStorage):
     def __init__(self, redis_adapter: Redis):
-        self.redis_adapter = Redis()
+        self.redis_adapter = redis_adapter
 
     def load_state(self):
         self.redis_adapter.set('data', json.dumps(self.state_dict))
@@ -53,29 +53,8 @@ class State(LocalStorage):
 
 # examples of work____________________________________________--
 if __name__ == '__main__':
-    dict = {'happy': 133, 'dasda': 'd323113added', 'assayed': 'dsada'}
-    json.dumps(dict)
-    for i in range(10):
-        s = State(f'{i}', dict)
-        s.set_state()
-        JsonFileStorage('test.json').load_json_state()
-
-    print(JsonFileStorage('test.json').retrieve_state())
-
-    # state = State(1, 'ok')
-    # state.set_state()
-    #
-    # st = State(2, 'let think')
-    # st.set_state()
-    #
-    # some_state = State(3, 'not bad')
-    # some_state.set_state()
-    #
-    # print(some_state.get_state())
-    #
-    # JsonFileStorage('test.json').load_json_state()
-    # print(JsonFileStorage('test.json').retrieve_state())
-    #
-    # r = Redis()
-    # RedisStorage(r).load_state()
-    # print(RedisStorage(r).retrieve_state())
+    r = Redis()
+    s = State('dasda', 'dasda')
+    s.set_state()
+    RedisStorage(r).load_state()
+    print(RedisStorage(r).retrieve_state())

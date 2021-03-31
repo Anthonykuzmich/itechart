@@ -1,21 +1,21 @@
 import json
 from elasticsearch import Elasticsearch, helpers
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 import psycopg2
+from redis import Redis
+
 from configs.backoff_decorator import backoff
-from configs.jsonfilestorage import JsonFileStorage, State, LocalStorage
-import typing
+from configs.jsonfilestorage import JsonFileStorage, State, RedisStorage
 
 dsn = {
-    "dbname": "movies_db",
+    "dbname": "movies",
     "user": "postgres",
     "password": "123qwe",
-    "host": "localhost",
+    "host": "0.0.0.0",
     "port": 5432,
 }
 
 
-@backoff()
 def connect_elasticsearch():
     es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
     if not es.ping():
@@ -142,16 +142,14 @@ def transform_data():
             'writers': {'name': list(names_with_values["writers"])}
         }
 
-        state = State(names_with_values['id'], doc)
+        state = State('latest', doc)
         state.set_state()
-        JsonFileStorage('state.json').load_json_state()
-        doc = json.dumps(doc)
-        try:
-            movie = Movie.parse_raw(doc)
-            return 'the data is valid'
-        except ValidationError as e:
-            print(str(e))
 
+        RedisStorage(Redis()).load_state()
+
+        # JsonFileStorage('state.json').load_json_state()
+
+        doc = json.dumps(doc)
         yield doc
 
 
@@ -165,10 +163,16 @@ def load_data(elastic_object, data, index_name):
         print(str(ex))
 
 
+def get_last_state():
+    return RedisStorage(Redis()).retrieve_state()
+    # return JsonFileStorage('state.json').retrieve_state()
+
+
 if __name__ == '__main__':
     es = connect_elasticsearch()
-    create_index(es, index_name='movie')
+    create_index(es, index_name='movies')
     extract_data()
     data = transform_data()
 
-    load_data(elastic_object=es, data=data, index_name='movie')
+    load_data(elastic_object=es, data=data, index_name='movies')
+    print(get_last_state())
