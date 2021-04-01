@@ -17,7 +17,7 @@ dsn = {
 
 @backoff()
 def connect_elasticsearch():
-    es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
+    es = Elasticsearch([{'host': '0.0.0.0', 'port': 9200}])
     if not es.ping():
         raise ValueError("Connection failed")
     return es
@@ -170,9 +170,9 @@ def get_last_state():
 
 if __name__ == '__main__':
     es = connect_elasticsearch()
-    create_index(es, index_name='movies_db')
+    create_index(es, index_name='movies')
     extract_data()
     data = transform_data()
 
-    load_data(elastic_object=es, data=data, index_name='movies_db')
+    load_data(elastic_object=es, data=data, index_name='movies')
     print(get_last_state())

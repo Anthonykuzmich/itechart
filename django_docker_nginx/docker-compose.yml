@@ -26,8 +26,6 @@ services:
       interval: "1s"
       timeout: "3s"
       retries: 60
-    networks:
-      - elk
 
   django_gunicorn:
     restart: always
@@ -42,18 +40,14 @@ services:
       - "8000:8000"
     depends_on:
       - db
-    networks:
-      - elk
 
-  script:
-    build: etl/
+  etl:
+    build: etl
     volumes:
-      - etl/:/app
+      - ./etl/:/app
     restart: always
     depends_on:
       - elasticsearch
-    networks:
-      - elk
 
   nginx:
     build: ./nginx
@@ -65,16 +59,9 @@ services:
       - "80:80"
     depends_on:
       - django_gunicorn
-    networks:
-      - elk
 
 volumes:
-  elasticsearch:
-  code:
-  static:
   postgres_data:
+  static:
+  code:
   etl:
-
-networks:
-  elk:
-    driver: bridge

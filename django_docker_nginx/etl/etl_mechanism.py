@@ -1,11 +1,10 @@
 import json
-import time
 
 from elasticsearch import Elasticsearch, helpers
 from pydantic import BaseModel
 import psycopg2
 from redis import Redis
-
+import time
 from configs.backoff_decorator import backoff
 from configs.jsonfilestorage import JsonFileStorage, State, RedisStorage
 
@@ -17,9 +16,10 @@ dsn = {
     "port": 5432,
 }
 
-@backoff()
+
 def connect_elasticsearch():
-    es = Elasticsearch([{'host': '0.0.0.0', 'port': 9200}])
+    es = Elasticsearch(hosts={"host": "elasticsearch"}, retry_on_timeout=True)
+
     for _ in range(100):
         try:
             es.cluster.health(wait_for_status='yellow')
@@ -104,18 +104,17 @@ def create_index(es_object, index_name='movies'):
         return created
 
 
-class Movie(BaseModel):
-    id: str
-    title: str
-    genre: str
-    description: str = None
-    director: str = None
-    imdb_rating: float
-    writers: str
-    actors: str
+# class Movie(BaseModel):
+#     id: str
+#     title: str
+#     genre: str
+#     description: str = None
+#     director: str = None
+#     imdb_rating: float
+#     writers: str
+#     actors: str
 
 
-@backoff()
 def extract_data():
     with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
         cursor.execute('''select m.id, m.title, array_agg(DISTINCT g.name) as genre,m.description, m.director, m.imdb_rating,
@@ -176,7 +175,7 @@ def get_last_state():
 
 
 if __name__ == '__main__':
-    es = connect_elasticsearch()
+    es = Elasticsearch(hosts=[{"host": "0.0.0.0"}], retry_on_timeout=True)
     for _ in range(100):
         try:
             es.cluster.health(wait_for_status='yellow')
