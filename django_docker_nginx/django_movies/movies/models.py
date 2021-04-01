@@ -1,6 +1,8 @@
 import uuid
 
 from django.db import models
+from model_utils.fields import AutoCreatedField, AutoLastModifiedField
+from django.utils.translation import gettext_lazy as _
 
 
 class Actor(models.Model):
@@ -50,6 +52,8 @@ class Movie(models.Model):
     genres = models.ManyToManyField(Genre, through='MovieGenre')
     actors = models.ManyToManyField(Actor, through='MovieActor')
     writers = models.ManyToManyField(Writer, through='MovieWriter')
+    created_at = AutoCreatedField(_("created"))
+    updated_at = AutoLastModifiedField(_("modified"))
 
     class Meta:
         managed = False

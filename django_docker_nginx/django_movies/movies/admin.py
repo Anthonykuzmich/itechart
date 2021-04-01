@@ -29,7 +29,7 @@ class GenreInline(admin.TabularInline):
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
     # отображение полей в списке
-    list_display = ('title', 'description', 'imdb_rating')
+    list_display = ('title', 'description', 'imdb_rating', 'created_at', 'updated_at')
     fields = (
         'title', 'description', 'director', 'imdb_rating',
     )

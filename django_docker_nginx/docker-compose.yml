@@ -1,6 +1,34 @@
 version: '3.7'
 
 services:
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=123qwe
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=movies
+    ports:
+      - "5432:5432"
+  elasticsearch:
+    build: elasticsearch/
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+    environment:
+      - "cluster.name=elasticsearch"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - "XPACK_SECURITY_ENABLED=false"
+    healthcheck:
+      test: "curl http://elasticsearch:9200"
+      interval: "1s"
+      timeout: "3s"
+      retries: 60
+    networks:
+      - elk
+
   django_gunicorn:
     restart: always
     volumes:
@@ -14,18 +42,18 @@ services:
       - "8000:8000"
     depends_on:
       - db
+    networks:
+      - elk
 
-  db:
-    image: postgres
+  script:
+    build: etl/
     volumes:
-    - postgres_data:/var/lib/postgresql/data/
-    environment:
-    - POSTGRES_PASSWORD=123qwe
-    - POSTGRES_USER=postgres
-    - POSTGRES_DB=movies
-    ports:
-    - 5432:5432
-
+      - etl/:/app
+    restart: always
+    depends_on:
+      - elasticsearch
+    networks:
+      - elk
 
   nginx:
     build: ./nginx
@@ -37,8 +65,16 @@ services:
       - "80:80"
     depends_on:
       - django_gunicorn
+    networks:
+      - elk
 
 volumes:
+  elasticsearch:
   code:
   static:
   postgres_data:
+  etl:
+
+networks:
+  elk:
+    driver: bridge
