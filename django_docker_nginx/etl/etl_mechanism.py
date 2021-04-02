@@ -12,11 +12,11 @@ dsn = {
     "dbname": "movies",
     "user": "postgres",
     "password": "123qwe",
-    "host": "0.0.0.0",
+    "host": "db",
     "port": 5432,
 }
 
-
+@backoff()
 def connect_elasticsearch():
     es = Elasticsearch(hosts={"host": "elasticsearch"}, retry_on_timeout=True)
 
@@ -114,7 +114,7 @@ def create_index(es_object, index_name='movies'):
 #     writers: str
 #     actors: str
 
-
+@backoff()
 def extract_data():
     with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
         cursor.execute('''select m.id, m.title, array_agg(DISTINCT g.name) as genre,m.description, m.director, m.imdb_rating,
@@ -175,15 +175,16 @@ def get_last_state():
 
 
 if __name__ == '__main__':
-    es = Elasticsearch(hosts=[{"host": "0.0.0.0"}], retry_on_timeout=True)
+    es = Elasticsearch(hosts=[{"host": "elasticsearch"}], retry_on_timeout=True)
     for _ in range(100):
         try:
             es.cluster.health(wait_for_status='yellow')
         except ConnectionError:
             time.sleep(2)
-    create_index(es, index_name='movies_db')
+    create_index(es, index_name='movies_dab')
     extract_data()
     data = transform_data()
 
-    load_data(elastic_object=es, data=data, index_name='movies_db')
+    load_data(elastic_object=es, data=data, index_name='movies_dab')
     print(get_last_state())
+

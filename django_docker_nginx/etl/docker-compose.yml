@@ -28,16 +28,17 @@ services:
       - POSTGRES_DB=movies
     ports:
       - "5432:5432"
+    depends_on:
+      - elasticsearch
 
-
-  script:
+  etl:
     build: .
     volumes:
       - .:/app
-    restart: always
     depends_on:
+      - elasticsearch
       - db
 
 volumes:
   postgres_data:
-  script:
+  etl:
