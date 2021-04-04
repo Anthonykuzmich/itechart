@@ -1,16 +1,6 @@
 version: '3.7'
 
 services:
-  db:
-    image: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_PASSWORD=123qwe
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=movies
-    ports:
-      - "5432:5432"
   elasticsearch:
     build: elasticsearch/
     volumes:
@@ -27,6 +17,25 @@ services:
       timeout: "3s"
       retries: 60
 
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=123qwe
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=movies
+    ports:
+      - "5432:5432"
+
+  etl:
+    build: etl
+    volumes:
+      - ./etl/:/app
+    restart: always
+    depends_on:
+      - elasticsearch
+
   django_gunicorn:
     restart: always
     volumes:
@@ -41,13 +50,6 @@ services:
     depends_on:
       - db
 
-  etl:
-    build: etl
-    volumes:
-      - ./etl/:/app
-    restart: always
-    depends_on:
-      - elasticsearch
 
   nginx:
     build: ./nginx
