@@ -1,7 +1,0 @@
-Django==3.1
-psycopg2-binary
-dj-static
-gunicorn==20.0.4
-asgiref==3.2.10
-django-debug-toolbar==2.2
-django-model-utils==4.0.0
