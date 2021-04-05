@@ -1,0 +1,89 @@
+version: '3.7'
+
+services:
+  elasticsearch:
+    build: django_docker_nginx/elasticsearch
+    volumes:
+      - ./django_docker_nginx/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+    ports:
+      - "9200:9200"
+    environment:
+      - "cluster.name=elasticsearch"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+      - "XPACK_SECURITY_ENABLED=false"
+    healthcheck:
+      test: "curl http://elasticsearch:9200"
+      interval: "1s"
+      timeout: "3s"
+      retries: 60
+
+  db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD=123qwe
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=movies
+    ports:
+      - "5432:5432"
+
+  etl_django:
+    build: django_docker_nginx/etl
+    volumes:
+      - ./django_docker_nginx/etl/:/app
+    restart: always
+    depends_on:
+      - elasticsearch
+
+  django_gunicorn:
+    restart: always
+    volumes:
+      - ./django_docker_nginx/django_movies:/app
+      - ./django_docker_nginx/static:/static
+    env_file:
+      - django_docker_nginx/.env
+    build:
+      context: django_docker_nginx
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - nginx
+      - elasticsearch
+      - etl_django
+
+  nginx:
+    build: django_docker_nginx/nginx
+    restart: always
+    volumes:
+      - ./django_docker_nginx:/code
+      - ./django_docker_nginx/static:/static
+    ports:
+      - "80:80"
+
+  etl_flask:
+    build: flask_elastic_docker/etl
+    volumes:
+      - ./flask_elastic_docker/etl:/app
+    restart: always
+
+  flask:
+    build: flask_elastic_docker/web
+    volumes:
+      - ./flask_elastic_docker/web:/app
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - "DOCKER_MACHINE_IP=${DOCKER_MACHINE_IP}"
+    depends_on:
+      - elasticsearch
+      - etl_flask
+
+
+volumes:
+  postgres_data:
+  static:
+  code:
+  etl:
