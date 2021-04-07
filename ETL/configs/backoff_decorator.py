@@ -14,7 +14,6 @@ def backoff(start_sleep_time=0.1, factor=2, border_sleep_time=10):
             border_sleep = border_sleep_time
             while border_sleep_time > start_sleep_time:
                 try:
-                    func()
                     print('The connection was successfully set')
                     return func()
                 except Exception:

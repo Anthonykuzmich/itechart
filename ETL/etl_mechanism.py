@@ -1,6 +1,5 @@
 import json
 from elasticsearch import Elasticsearch, helpers
-from pydantic import BaseModel
 import psycopg2
 from redis import Redis
 
@@ -15,9 +14,19 @@ dsn = {
     "port": 5432,
 }
 
+
+def coroutine(fn):
+    def start(*args, **kwargs):
+        g = fn(*args, **kwargs)
+        next(g)
+        return g
+
+    return start
+
+
 @backoff()
 def connect_elasticsearch():
-    es = Elasticsearch([{'host': '0.0.0.0', 'port': 9200}])
+    es = Elasticsearch()
     if not es.ping():
         raise ValueError("Connection failed")
     return es
@@ -97,18 +106,7 @@ def create_index(es_object, index_name='movies'):
         return created
 
 
-class Movie(BaseModel):
-    id: str
-    title: str
-    genre: str
-    description: str = None
-    director: str = None
-    imdb_rating: float
-    writers: str
-    actors: str
-
-
-# @backoff()
+@backoff()
 def extract_data():
     with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
         cursor.execute('''select m.id, m.title, array_agg(DISTINCT g.name) as genre,m.description, m.director, m.imdb_rating,
@@ -121,46 +119,50 @@ def extract_data():
         LEFT JOIN genre g on mg.genre_id = g.id
         group by m.id ORDER BY m.updated_at DESC''')
         data = cursor.fetchall()
-        description = cursor.description
-        return {'data': data, 'description': description}
+        for row in data:
+            transform = transform_data()
+            description = cursor.description
+            names_of_colums = list(map(lambda x: x[0], description))
+            names_with_values = dict(zip(names_of_colums, row))
+            doc = {
+                names_of_colums[0]: names_with_values["id"],
+                names_of_colums[5]: float(names_with_values["imdb_rating"]),
+                names_of_colums[2]: names_with_values["genre"],
+                names_of_colums[1]: names_with_values["title"],
+                names_of_colums[3]: names_with_values["description"],
+                names_of_colums[4]: names_with_values["director"],
+                'actors': {'name': list(names_with_values["actors"])},
+                'writers': {'name': list(names_with_values["writers"])}
+            }
+            state = State('latest', doc)
+            state.set_state()
+
+            JsonFileStorage('state.json').load_json_state()
+            try:
+                transform.send(doc)
+            except StopIteration:
+                print('Extract')
+            except RuntimeError:
+                break
 
 
+@coroutine
 def transform_data():
-    data = extract_data()['data']
-    description = extract_data()['description']
-    names_of_colums = list(map(lambda x: x[0], description))
-    for row in data:
-        names_with_values = dict(zip(names_of_colums, row))
-        doc = {
-            names_of_colums[0]: names_with_values["id"],
-            names_of_colums[5]: float(names_with_values["imdb_rating"]),
-            names_of_colums[2]: names_with_values["genre"],
-            names_of_colums[1]: names_with_values["title"],
-            names_of_colums[3]: names_with_values["description"],
-            names_of_colums[4]: names_with_values["director"],
-            'actors': {'name': list(names_with_values["actors"])},
-            'writers': {'name': list(names_with_values["writers"])}
-        }
-
-        state = State('latest', doc)
-        state.set_state()
-
-        RedisStorage(Redis()).load_state()
-
-        # JsonFileStorage('state.json').load_json_state()
-
-        doc = json.dumps(doc)
-        yield doc
-
-
-def load_data(elastic_object, data, index_name):
+    data = yield
+    data['imdb_rating'] = str(data['imdb_rating'])
+    transformed_data = json.dumps(data)
+    loader = load_data(connect_elasticsearch(), 'movies')
     try:
+        loader.send(transformed_data)
+    except StopIteration:
+        print('Transform')
 
-        helpers.bulk(client=elastic_object, actions=data, index=index_name)
-        print('Data was successfully inserted!!!')
-    except Exception as ex:
-        print('Error in indexing data')
-        print(str(ex))
+
+@coroutine
+def load_data(elastic_object, index_name):
+    data_to_load = yield
+    elastic_object.index(body=data_to_load, index=index_name)
+    print('Load')
 
 
 def get_last_state():
@@ -169,10 +171,9 @@ def get_last_state():
 
 
 if __name__ == '__main__':
-    es = connect_elasticsearch()
+    es = Elasticsearch()
     create_index(es, index_name='movies')
     extract_data()
-    data = transform_data()
-
-    load_data(elastic_object=es, data=data, index_name='movies')
+    transform_data()
+    load_data(elastic_object=es, index_name='movies')
     print(get_last_state())
