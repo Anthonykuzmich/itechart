@@ -32,7 +32,6 @@ services:
     build: etl
     volumes:
       - ./etl/:/app
-    restart: always
     depends_on:
       - elasticsearch
 

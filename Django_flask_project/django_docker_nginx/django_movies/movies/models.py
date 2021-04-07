@@ -4,10 +4,12 @@ from django.db import models
 from model_utils.fields import AutoCreatedField, AutoLastModifiedField
 from django.utils.translation import gettext_lazy as _
 from django.db.models import signals
+from django.dispatch import receiver
 
 from elasticsearch import Elasticsearch, helpers, RequestsHttpConnection
 
-ES_CLIENT = Elasticsearch(hosts={'0.0.0.0'})
+
+# ES_CLIENT = Elasticsearch(hosts={'0.0.0.0'})
 
 
 class Actor(models.Model):
@@ -48,23 +50,6 @@ class Writer(models.Model):
         return self.name
 
 
-def update_elasticsearch(sender, instance, created, **kwargs):
-    # res = ES_CLIENT.index(index='movies_dab', body=kwargs, refresh=True)
-    # doc = {
-    #     names_of_colums[0]: instance.id,
-    #     names_of_colums[5]: instance.imdb_rating,
-    #     names_of_colums[2]: instance.genre,
-    #     names_of_colums[1]: instance.title,
-    #     names_of_colums[3]: instance.description,
-    #     names_of_colums[4]: instance.director,
-    #     'actors': {'name': list(instance.actors)},
-    #     'writers': {'name': list(names_with_values["writers"])}
-    # }
-    print(instance.title)
-    for a in instance.actors.all():
-        print(a)
-
-
 def hex_uuid():
     return uuid.uuid4()
 
@@ -90,7 +75,10 @@ class Movie(models.Model):
         return self.title
 
 
-signals.post_init.connect(receiver=update_elasticsearch, sender=Movie)
+# @receiver(signals.post_save, sender=Movie)
+# def update_elasticsearch(sender, instance, **kwargs):
+#     print(f'title - {instance.title}'
+#           f'description - {instance.description}')
 
 
 class MovieGenre(models.Model):
@@ -115,6 +103,26 @@ class MovieActor(models.Model):
         db_table = 'movie_actor'
         unique_together = (('movie', 'actor'),)
         indexes = [models.Index(fields=['actor', 'movie'])]
+
+
+actors = []
+
+
+@receiver(signals.post_save, sender=Movie)
+def update_everything(sender, instance, **kwargs):
+    if len(instance.genres.all()) > 0:
+        doc = {
+            'id': str(instance.id),
+            'imdb_rating': float(instance.imdb_rating),
+            'genre': [genre.name for genre in instance.genres.all()],
+            'title': instance.title,
+            'description': instance.description,
+            'director': instance.director,
+            'actors': {'name': list(actor.name for actor in instance.actors.all())},
+            'writers': {'name': list(writer.name for writer in instance.writers.all())}
+        }
+        es = Elasticsearch(hosts={'elasticsearch'})
+        res = es.index(index='movies_dab', body=doc)
 
 
 class MovieWriter(models.Model):

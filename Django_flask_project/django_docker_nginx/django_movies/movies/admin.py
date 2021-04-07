@@ -39,6 +39,10 @@ class MovieAdmin(admin.ModelAdmin):
     list_filter = ('imdb_rating',)
     search_fields = ('title', 'description', 'id')
 
+    def save_related(self, request, form, formsets, change):
+        super(MovieAdmin, self).save_related(request, form, formsets, change)
+        obj = form.instance
+        obj.save()
 
 @admin.register(Writer)
 class WriterAdmin(admin.ModelAdmin):
