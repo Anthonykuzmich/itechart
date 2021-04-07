@@ -32,7 +32,6 @@ services:
     build: django_docker_nginx/etl
     volumes:
       - ./django_docker_nginx/etl/:/app
-    restart: always
     depends_on:
       - elasticsearch
 
