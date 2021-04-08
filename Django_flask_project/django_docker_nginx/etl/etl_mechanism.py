@@ -114,7 +114,7 @@ def create_index(es_object, index_name='movies'):
         return created
 
 
-# @backoff()
+@backoff()
 def extract_data():
     with psycopg2.connect(**dsn) as conn, conn.cursor() as cursor:
         cursor.execute('''select m.id, m.title, array_agg(DISTINCT g.name) as genre,m.description, m.director, m.imdb_rating,
@@ -187,8 +187,9 @@ if __name__ == '__main__':
         except ConnectionError:
             time.sleep(2)
     create_index(es, index_name='movies_db')
+
     extract_data()
     transform_data(es)
-
     load_data(elastic_object=es, index_name='movies_db')
+
     print(get_last_state())

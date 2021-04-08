@@ -9,7 +9,6 @@ from django.dispatch import receiver
 from elasticsearch import Elasticsearch, helpers, RequestsHttpConnection
 
 
-# ES_CLIENT = Elasticsearch(hosts={'0.0.0.0'})
 
 
 class Actor(models.Model):
@@ -35,10 +34,12 @@ class Genre(models.Model):
     def __str__(self):
         return self.name
 
+def hex_uuid():
+    return uuid.uuid4()
 
 class Writer(models.Model):
     id = models.CharField(primary_key=True, max_length=36,
-                          default=uuid.uuid4())
+                          default=hex_uuid)
     name = models.CharField(max_length=40)
 
     class Meta:
@@ -50,8 +51,7 @@ class Writer(models.Model):
         return self.name
 
 
-def hex_uuid():
-    return uuid.uuid4()
+
 
 
 class Movie(models.Model):
@@ -73,12 +73,6 @@ class Movie(models.Model):
 
     def __str__(self):
         return self.title
-
-
-# @receiver(signals.post_save, sender=Movie)
-# def update_elasticsearch(sender, instance, **kwargs):
-#     print(f'title - {instance.title}'
-#           f'description - {instance.description}')
 
 
 class MovieGenre(models.Model):
@@ -103,9 +97,6 @@ class MovieActor(models.Model):
         db_table = 'movie_actor'
         unique_together = (('movie', 'actor'),)
         indexes = [models.Index(fields=['actor', 'movie'])]
-
-
-actors = []
 
 
 @receiver(signals.post_save, sender=Movie)
