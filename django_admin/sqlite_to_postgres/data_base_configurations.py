@@ -1,11 +1,13 @@
 db_configurations = ('''
 create table IF NOT EXISTS movie
 (
-    id char(36) primary key,
+    id char(40) primary key,
     title       text,
     description text,
     director    text,
-    imdb_rating NUMERIC(3,1) NULL
+    imdb_rating NUMERIC(3,1) NULL,
+    created_at timestamp with time zone,
+    updated_at timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS genre 
@@ -17,7 +19,7 @@ CREATE TABLE IF NOT EXISTS genre
 CREATE TABLE IF NOT EXISTS movie_genre
 (
     id SERIAL PRIMARY KEY,
-    movie_id char(10) NOT NULL,
+    movie_id char(40) NOT NULL,
     genre_id int NOT NULL
 );
 
@@ -31,7 +33,7 @@ create table IF NOT EXISTS actor
 create table IF NOT EXISTS movie_actor
 (
     id serial PRIMARY KEY,
-    movie_id char(10) NOT NULL ,
+    movie_id char(40) NOT NULL ,
     actor_id int NOT NULL
 );
 
@@ -43,7 +45,7 @@ create table IF NOT EXISTS writer
 
 create table IF NOT EXISTS movie_writer
 (   id serial primary key,
-    movie_id char(10) not null,
+    movie_id char(40) not null,
     writer_id char(40) not null
 );
 
