@@ -54,11 +54,7 @@ class Writer(models.Model):
 
 
 class Movie(models.Model):
-<<<<<<< HEAD:Django_flask_project/django_docker_nginx/django_movies/movies/models.py
     id = models.CharField(primary_key=True, max_length=40, default=hex_uuid, editable=False)
-=======
-    id = models.CharField(primary_key=True, max_length=36, default=uuid.uuid4())
->>>>>>> master:django_admin/django_movies/movies/models.py
     title = models.TextField(blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     director = models.TextField(blank=True, null=True)
@@ -121,13 +117,8 @@ def update_everything(sender, instance, **kwargs):
 
 class MovieWriter(models.Model):
     id = models.AutoField(primary_key=True, editable=False)
-<<<<<<< HEAD:Django_flask_project/django_docker_nginx/django_movies/movies/models.py
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     writer = models.ForeignKey(Writer, on_delete=models.CASCADE)
-=======
-    movie = models.ForeignKey(Movie, max_length=10, on_delete=models.CASCADE)
-    writer = models.ForeignKey(Writer, max_length=40, on_delete=models.CASCADE)
->>>>>>> master:django_admin/django_movies/movies/models.py
 
     class Meta:
         managed = False
